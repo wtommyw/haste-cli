@@ -1,6 +1,9 @@
-use std::fs;
+extern crate reqwest;
+
+use std::fs::File;
 use std::error::Error;
 use std::env;
+use std::collections::HashMap;
 
 pub struct Options {
     pub filename: String,
@@ -23,12 +26,36 @@ impl Options {
     }
 }
 
+pub fn post_data(options: &Options, file: File) -> Result<String, Box<dyn Error>> {
+    let client = reqwest::Client::new();
+    let body = reqwest::Body::new(file);
+
+    let res: HashMap<String, String> = client.post(&options.url)
+        .body(body)
+        .send()?.json()?;
+
+    let _key = res.get("key").unwrap().clone();
+
+    Ok(_key)
+}
+
+pub fn create_share_link(base_url: &String, key: &String) -> String {
+    let base = &base_url.clone();
+
+    base.replace("documents", &key)
+
+}
+
 pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
-    let content = fs::read_to_string(options.filename)?;
+    let file  = File::open(&options.filename)?;
 
-    println!("text:\n{}", content);
+    let key = post_data(&options, file).unwrap_or_else(|err| {
+        panic!("Could not POST: {:?}", err)
+    });
 
-    println!("\nUrl:\n{}", options.url);
+    let url = create_share_link(&options.url, &key);
+
+    println!("Link: {}", &url);
 
     Ok(())
 }

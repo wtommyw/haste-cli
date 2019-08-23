@@ -1,7 +1,7 @@
 use std::env;
 use std::process;
 
-use hst::Options;
+use haste::Options;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -10,7 +10,7 @@ fn main() {
         process::exit(1)
     });
 
-    if let Err(e) = hst::run(options) {
+    if let Err(e) = haste::run(options) {
         println!("Application error: {}", e);
 
         process::exit(1);
