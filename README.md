@@ -13,6 +13,8 @@ cd haste-cli
 cargo build --release
 ```
 
+Executable will end up in `./target/release/`
+
 # Usage
 
 ```sh
