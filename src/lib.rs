@@ -1,5 +1,6 @@
 use std::fs;
 use std::error::Error;
+use std::env;
 
 pub struct Options {
     pub filename: String,
@@ -14,12 +15,9 @@ impl Options {
 
         let filename = args[1].clone();
 
-        let url: String;
-        if args.len() == 3 {
-            url = args[2].clone();
-        } else {
-            url = String::from("https://hasteb.in/documents");
-        }
+        let url = env::var("HASTE_URL").unwrap_or_else(|_err| {
+            String::from("https://hasteb.in/documents")
+        });
 
         Ok(Options{ filename, url })
     }
