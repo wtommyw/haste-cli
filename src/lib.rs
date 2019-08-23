@@ -55,7 +55,7 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
 
     let url = create_share_link(&options.url, &key);
 
-    println!("Link: {}", &url);
+    println!("Uploaded {} to:\n{}", &options.filename, &url);
 
     Ok(())
 }

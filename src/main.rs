@@ -5,8 +5,8 @@ use haste::Options;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let options: Options = Options::new(&args).unwrap_or_else(|err| {
-        println!("Problem parsing arguments: {}", err);
+    let options: Options = Options::new(&args).unwrap_or_else(|_err| {
+        println!("Usage:\nhaste [file]");
         process::exit(1)
     });
 
