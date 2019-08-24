@@ -19,7 +19,7 @@ Executable will end up in `./target/release/`
 
 # Usage
 
-It uploads to https://pastie.iodocuments by default, you can change this by setting the `HASTE_URL` environment variable.
+It uploads to https://pastie.io/documents by default, you can change this by setting the `HASTE_URL` environment variable.
 
 ```sh
 haste [file]
