@@ -1,6 +1,6 @@
 # haste-cli
 
-A small command line application to post the content of a file to a hastebin server. (Default: https://hasteb.in). Built because I needed it and I wanted to improve in Rust.
+A small command line application to post the content of a file to a hastebin server. (Default: https://pastie.io/). Built because I needed it and I wanted to improve in Rust.
 
 # Requirements
 You should have [Rust-lang](https://www.rust-lang.org/tools/install) installed.
@@ -19,7 +19,7 @@ Executable will end up in `./target/release/`
 
 # Usage
 
-It uploads to https://hasteb.in/documents by default, you can change this by setting the `HASTE_URL` environment variable.
+It uploads to https://pastie.iodocuments by default, you can change this by setting the `HASTE_URL` environment variable.
 
 ```sh
 haste [file]

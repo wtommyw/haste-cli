@@ -19,7 +19,7 @@ impl Options {
         let filename = args[1].clone();
 
         let url = env::var("HASTE_URL").unwrap_or_else(|_err| {
-            String::from("https://hasteb.in/documents")
+            String::from("https://pastie.io/documents")
         });
 
         Ok(Options{ filename, url })
