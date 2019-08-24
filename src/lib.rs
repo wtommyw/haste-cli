@@ -59,3 +59,70 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_start_arguments() -> [String; 2] {
+        let program_name = String::from("Testing");
+        let filename = String::from("test.txt");
+
+        [program_name.clone(), filename.clone()]
+
+    }
+
+    #[test]
+    fn options_constructor_gives_error_no_filename() {
+        let args: [String; 1] = [String::from("PogramName")];
+
+        match Options::new(&args) {
+            Ok(_) => assert!(false, "Only 1 arg (program name) was given, an error should be returned."),
+            Err(_) => assert!(true)
+        }
+    }
+
+    #[test]
+    fn options_constructor_returns_options () {
+        let filename = String::from("test.txt");
+
+        let args: [String; 2] = create_start_arguments();
+
+        match Options::new(&args) {
+            Ok(options) => assert_eq!(options.filename, filename),
+            Err(_) => assert!(false, "Filename was given, method should not fail.")
+        }
+
+    }
+
+    #[test]
+    fn options_constructor_uses_standard_url_without_env_var() {
+
+        let default_url = String::from("https://hasteb.in/documents");
+        env::remove_var("HASTE_URL");
+
+        let args: [String; 2] = create_start_arguments();
+
+        match Options::new(&args) {
+            Ok(options) => assert_eq!(options.url, default_url),
+            Err(_) => assert!(false, "Filename was given, method should not fail.")
+        }
+
+    }
+
+    #[test]
+    fn options_constructor_uses_custom_url_from_env_var() {
+
+        let custom_url = String::from("https://pastie.io/documents");
+        env::set_var("HASTE_URL", &custom_url);
+
+        let args: [String; 2] = create_start_arguments();
+
+        match Options::new(&args) {
+            Ok(options) => assert_eq!(options.url, custom_url),
+            Err(_) => assert!(false, "Filename was given, method should not fail.")
+        }
+
+    }
+
+}
