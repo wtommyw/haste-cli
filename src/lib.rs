@@ -26,17 +26,32 @@ impl Options {
     }
 }
 
-pub fn post_data(options: &Options, file: File) -> Result<String, Box<dyn Error>> {
+pub fn post_data(options: &Options, file: File) -> Result<reqwest::Response, &'static str> {
     let client = reqwest::Client::new();
     let body = reqwest::Body::new(file);
 
-    let res: HashMap<String, String> = client.post(&options.url)
-        .body(body)
-        .send()?.json()?;
+    let res = match client.post(&options.url).body(body).send() {
+        Ok(response) => response,
+        Err(err) => {
+            if err.is_http() {
+                return Err("Could not POST");
+            } else {
+                return Err("Invalid URL");
+            }
+        }
+    };
 
-    let _key = res.get("key").unwrap().clone();
+    if res.status().is_success() {
+        return Ok(res);
+    } else {
+        return Err("POST was unsuccessful");
+    }
+}
 
-    Ok(_key)
+pub fn parse_response(response: &mut reqwest::Response) -> String {
+    let body: HashMap<String, String> = response.json().unwrap();
+
+    body.get("key").unwrap().clone()
 }
 
 pub fn create_share_link(base_url: &String, key: &String) -> String {
@@ -49,9 +64,11 @@ pub fn create_share_link(base_url: &String, key: &String) -> String {
 pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
     let file  = File::open(&options.filename)?;
 
-    let key = post_data(&options, file).unwrap_or_else(|err| {
+    let mut response = post_data(&options, file).unwrap_or_else(|err| {
         panic!("Could not POST: {:?}", err)
     });
+
+    let key = parse_response(&mut response);
 
     let url = create_share_link(&options.url, &key);
 
@@ -63,6 +80,9 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mockito::mock;
+
+    static DEFAULT_URL: &str = "https://pastie.io/documents";
 
     fn create_start_arguments() -> [String; 2] {
         let program_name = String::from("Testing");
@@ -97,10 +117,9 @@ mod tests {
 
     #[test]
     fn options_constructor_uses_standard_url_without_env_var() {
-
-        let default_url = String::from("https://hasteb.in/documents");
         env::remove_var("HASTE_URL");
 
+        let default_url = String::from(DEFAULT_URL);
         let args: [String; 2] = create_start_arguments();
 
         match Options::new(&args) {
@@ -112,17 +131,51 @@ mod tests {
 
     #[test]
     fn options_constructor_uses_custom_url_from_env_var() {
-
-        let custom_url = String::from("https://pastie.io/documents");
+        let custom_url = String::from("https://hasteb.in/documents");
         env::set_var("HASTE_URL", &custom_url);
 
         let args: [String; 2] = create_start_arguments();
 
         match Options::new(&args) {
             Ok(options) => assert_eq!(options.url, custom_url),
-            Err(_) => assert!(false, "Filename was given, method should not fail.")
+            Err(_) =>  assert!(false, "Filename was given, method should not fail.")
         }
 
+    }
+
+    #[test]
+    fn post_data_to_invalid_url_returns_error() {
+        let custom_url = String::from("invalid_url");
+        env::set_var("HASTE_URL", &custom_url);
+
+        let args: [String; 2] = create_start_arguments();
+        let options = Options::new(&args).unwrap();
+        let file  = File::open(&options.filename).unwrap();
+
+        match post_data(&options, file) {
+            Ok(_) => assert!(false, "This method is designed to fail"),
+            Err(err) => assert_eq!("Invalid URL", err)
+
+        }
+    }
+
+    #[test]
+    fn post_dat_to_unreachable_url_returns_error() {
+
+        let _m = mock("POST", "/documents").with_status(501);
+        let mut custom_url = String::from(&mockito::server_url());
+        custom_url.push_str("/documents");
+
+        env::set_var("HASTE_URL", &custom_url);
+
+        let args: [String; 2] = create_start_arguments();
+        let options = Options::new(&args).unwrap();
+        let file  = File::open(&options.filename).unwrap();
+
+        match post_data(&options, file) {
+            Ok(_t) => assert!(false, "Method should fail on unsuccessful response"),
+            Err(err) => assert_eq!("POST was unsuccessful", err)
+        };
     }
 
 }
