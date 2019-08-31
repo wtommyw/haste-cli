@@ -97,7 +97,7 @@ pub fn create_share_link(base_url: &String, key: &String) -> String {
 
 }
 
-pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
+pub fn upload(options: &Options) -> Result<(), Box<dyn Error>>{
     let file  = File::open(&options.filename)?;
 
     let mut response = post_data(&options, file).unwrap_or_else(|err| {
@@ -109,6 +109,19 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
     let url = create_share_link(&options.url, &key);
 
     println!("Uploaded {} to:\n{}", &options.filename, &url);
+
+    Ok(())
+}
+
+pub fn download(options: &Options) -> Result<(), &'static str> {
+    Err("To be implemented")
+}
+
+pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
+    match options.mode {
+        Mode::Upload => upload(&options)?,
+        Mode::Download => download(&options)?
+    };
 
     Ok(())
 }
@@ -267,6 +280,16 @@ mod tests {
             Ok(_t) => assert!(false, "Method should fail on unsuccessful response"),
             Err(err) => assert_eq!("POST was unsuccessful", err)
         };
+    }
+
+    #[test]
+    fn create_share_link_changes_documents_to_key() {
+        let key = String::from("abcdef");
+        let wanted_url = String::from("https://pastie.io/abcdef");
+        let default_url = String::from(DEFAULT_URL);
+
+        assert_eq!(create_share_link(&default_url, &key), wanted_url);
+
     }
 
 }
