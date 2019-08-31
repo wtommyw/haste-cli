@@ -22,7 +22,7 @@ Executable will end up in `./target/release/`
 Upload a file to a haste-server, uses https://pastie.io/documents by default
 
 ```sh
-haste <file> <url>
+haste <file> [url]
 ```
 
 Download a file from any haste-server url
