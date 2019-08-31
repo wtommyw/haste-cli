@@ -1,34 +1,57 @@
 extern crate reqwest;
+extern crate regex;
 
 use std::fs::File;
 use std::error::Error;
-use std::env;
 use std::collections::HashMap;
+use regex::Regex;
+use reqwest::{Response, Client, Body};
 
 pub struct Options {
     pub filename: String,
-    pub url: String
+    pub url: String,
+    pub mode: Mode
+}
+
+pub enum Mode {
+    Upload,
+    Download
 }
 
 impl Options {
     pub fn new(args: &[String]) -> Result<Options, &'static str> {
         if args.len() < 2 {
-            return Err("Missing filename");
+            return Err("Missing arguments");
         }
 
-        let filename = args[1].clone();
+        let (filename, url, mode);
+        if is_url(&args[1]) {
+            mode = Mode::Download;
+            url = args[1].clone();
 
-        let url = env::var("HASTE_URL").unwrap_or_else(|_err| {
-            String::from("https://pastie.io/documents")
-        });
+            if args.len() < 3 {
+                return Err("Missing filename");
+            } else {
+                filename = args[2].clone();
+            }
+        } else {
+            mode = Mode::Upload;
+            filename = args[1].clone();
 
-        Ok(Options{ filename, url })
+            if args.len() < 3 {
+                url = String::from("https://pastie.io/documents")
+            } else {
+                url = args[2].clone();
+            }
+        }
+
+        Ok(Options{ filename, url, mode })
     }
 }
 
-pub fn post_data(options: &Options, file: File) -> Result<reqwest::Response, &'static str> {
-    let client = reqwest::Client::new();
-    let body = reqwest::Body::new(file);
+pub fn post_data(options: &Options, file: File) -> Result<Response, &'static str> {
+    let client = Client::new();
+    let body = Body::new(file);
 
     let res = match client.post(&options.url).body(body).send() {
         Ok(response) => response,
@@ -48,7 +71,20 @@ pub fn post_data(options: &Options, file: File) -> Result<reqwest::Response, &'s
     }
 }
 
-pub fn parse_response(response: &mut reqwest::Response) -> String {
+pub fn is_url(str: &String) -> bool {
+    let regex = Regex::new(r"(https|http)(://)[\w]*(\.)[\w]*(/){0,1}").unwrap_or_else(|e| {
+        panic!("Could not compile regex: {}", e)
+    });
+
+    match regex.find(str) {
+        Some(_) => return true,
+        None => return false
+    };
+
+
+}
+
+pub fn parse_response(response: &mut Response) -> String {
     let body: HashMap<String, String> = response.json().unwrap();
 
     body.get("key").unwrap().clone()
@@ -84,7 +120,7 @@ mod tests {
 
     static DEFAULT_URL: &str = "https://pastie.io/documents";
 
-    fn create_start_arguments() -> [String; 2] {
+    fn create_upload_start_arguments() -> [String; 2] {
         let program_name = String::from("Testing");
         let filename = String::from("test.txt");
 
@@ -92,8 +128,45 @@ mod tests {
 
     }
 
+    fn create_custom_upload_start_arguments(url: &String) -> [String; 3] {
+        let program_name = String::from("Testing");
+        let filename = String::from("test.txt");
+
+        [program_name.clone(), filename.clone(), url.clone()]
+
+    }
+
+    fn create_download_start_arguments() -> [String; 3] {
+        let program_name = String::from("Testing");
+        let url = String::from("https://pastie.io/documents");
+        let filename = String::from("test.txt");
+
+        [program_name.clone(), url.clone(), filename.clone()]
+    }
+
     #[test]
-    fn options_constructor_gives_error_no_filename() {
+    fn is_url_returns_true_on_https_url() {
+        let url = String::from("https://pastie.io/documents");
+
+        assert_eq!(is_url(&url), true);
+    }
+
+    #[test]
+    fn is_url_returns_true_on_http_url() {
+        let url = String::from("http://pastie.io/documents");
+
+        assert_eq!(is_url(&url), true);
+    }
+
+    #[test]
+    fn is_url_returns_false_on_filename() {
+        let filename = String::from("test.txt");
+
+        assert_eq!(is_url(&filename), false);
+    }
+
+    #[test]
+    fn options_constructor_gives_error_no_arguments() {
         let args: [String; 1] = [String::from("PogramName")];
 
         match Options::new(&args) {
@@ -106,49 +179,69 @@ mod tests {
     fn options_constructor_returns_options () {
         let filename = String::from("test.txt");
 
-        let args: [String; 2] = create_start_arguments();
+        let args: [String; 2] = create_upload_start_arguments();
 
         match Options::new(&args) {
             Ok(options) => assert_eq!(options.filename, filename),
-            Err(_) => assert!(false, "Filename was given, method should not fail.")
+            Err(_) => assert!(false, "All arguments were given, method should not fail.")
         }
 
     }
 
     #[test]
-    fn options_constructor_uses_standard_url_without_env_var() {
-        env::remove_var("HASTE_URL");
-
-        let default_url = String::from(DEFAULT_URL);
-        let args: [String; 2] = create_start_arguments();
+    fn options_constructor_set_upload_mode_when_given_filename() {
+        let args: [String; 2] = create_upload_start_arguments();
 
         match Options::new(&args) {
-            Ok(options) => assert_eq!(options.url, default_url),
-            Err(_) => assert!(false, "Filename was given, method should not fail.")
+            Ok(options) => match options.mode {
+                Mode::Download => assert!(false, "Filename was given, method should be upload"),
+                Mode::Upload => assert!(true)
+            },
+            Err(_) =>  assert!(false, "All arguments were given, method should not fail.")
         }
-
     }
 
     #[test]
-    fn options_constructor_uses_custom_url_from_env_var() {
-        let custom_url = String::from("https://hasteb.in/documents");
-        env::set_var("HASTE_URL", &custom_url);
+    fn options_constructor_uses_default_upload_url_when_not_give() {
 
-        let args: [String; 2] = create_start_arguments();
+        let args: [String; 2] = create_upload_start_arguments();
+
+        match Options::new(&args) {
+            Ok(options) => assert_eq!(options.url, DEFAULT_URL),
+            Err(_) => assert!(false, "All arguments were given, method should not fail.")
+        }
+    }
+
+    #[test]
+    fn options_constructor_uses_custom_upload_url() {
+        let custom_url = String::from("https://hasteb.in/documents");
+
+        let args: [String; 3] = create_custom_upload_start_arguments(&custom_url);
 
         match Options::new(&args) {
             Ok(options) => assert_eq!(options.url, custom_url),
-            Err(_) =>  assert!(false, "Filename was given, method should not fail.")
+            Err(_) => assert!(false, "All arguments were given, method should not fail.")
         }
+    }
 
+    #[test]
+    fn options_constructor_set_download_mode_when_given_url() {
+        let args: [String; 3] = create_download_start_arguments();
+
+        match Options::new(&args) {
+            Ok(options) => match options.mode {
+                Mode::Download => assert!(true),
+                Mode::Upload => assert!(false, "URL was given, method should be download")
+            },
+            Err(_) =>  assert!(false, "All arguments were given, method should not fail.")
+        }
     }
 
     #[test]
     fn post_data_to_invalid_url_returns_error() {
         let custom_url = String::from("invalid_url");
-        env::set_var("HASTE_URL", &custom_url);
 
-        let args: [String; 2] = create_start_arguments();
+        let args: [String; 3] = create_custom_upload_start_arguments(&custom_url);
         let options = Options::new(&args).unwrap();
         let file  = File::open(&options.filename).unwrap();
 
@@ -166,9 +259,7 @@ mod tests {
         let mut custom_url = String::from(&mockito::server_url());
         custom_url.push_str("/documents");
 
-        env::set_var("HASTE_URL", &custom_url);
-
-        let args: [String; 2] = create_start_arguments();
+        let args: [String; 3] = create_custom_upload_start_arguments(&custom_url);
         let options = Options::new(&args).unwrap();
         let file  = File::open(&options.filename).unwrap();
 

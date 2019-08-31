@@ -19,10 +19,16 @@ Executable will end up in `./target/release/`
 
 # Usage
 
-It uploads to https://pastie.io/documents by default, you can change this by setting the `HASTE_URL` environment variable.
+Upload a file to a haste-server, uses https://pastie.io/documents by default
 
 ```sh
-haste [file]
+haste <file> <url>
+```
+
+Download a file from any haste-server url
+
+```sh
+haste <url> <output filename>
 ```
 
 # Testing

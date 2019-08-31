@@ -366,6 +366,7 @@ name = "haste"
 version = "0.1.0"
 dependencies = [
  "mockito 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.9.20 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
