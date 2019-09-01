@@ -134,27 +134,18 @@ mod tests {
     static DEFAULT_URL: &str = "https://pastie.io/documents";
 
     fn create_upload_start_arguments() -> [String; 2] {
-        let program_name = String::from("Testing");
-        let filename = String::from("test.txt");
-
-        [program_name.clone(), filename.clone()]
+        [String::from("command"), String::from("./test-data/test.txt")]
 
     }
 
     fn create_custom_upload_start_arguments(url: &String) -> [String; 3] {
-        let program_name = String::from("Testing");
-        let filename = String::from("test.txt");
-
-        [program_name.clone(), filename.clone(), url.clone()]
+        [String::from("command"), String::from("./test-data/test.txt"), url.clone()]
 
     }
 
     fn create_download_start_arguments() -> [String; 3] {
-        let program_name = String::from("Testing");
-        let url = String::from("https://pastie.io/documents");
-        let filename = String::from("test.txt");
+        [String::from("command"), String::from("https://pastie.io/documents"), String::from("./test-data/test.txt")]
 
-        [program_name.clone(), url.clone(), filename.clone()]
     }
 
     #[test]
@@ -173,7 +164,7 @@ mod tests {
 
     #[test]
     fn is_url_returns_false_on_filename() {
-        let filename = String::from("test.txt");
+        let filename = String::from("./test-data/test.txt");
 
         assert_eq!(is_url(&filename), false);
     }
@@ -190,7 +181,7 @@ mod tests {
 
     #[test]
     fn options_constructor_returns_options () {
-        let filename = String::from("test.txt");
+        let filename = String::from("./test-data/test.txt");
 
         let args: [String; 2] = create_upload_start_arguments();
 
