@@ -101,9 +101,8 @@ mod tests {
     }
 
     #[test]
-    fn post_dat_to_unreachable_url_returns_error() {
-
-        let _m = mock("POST", "/documents").with_status(501);
+    fn post_data_to_unreachable_url_returns_error() {
+        let _m = mock("POST", "/documents").with_status(500).create();
         let mut custom_url = String::from(&mockito::server_url());
         custom_url.push_str("/documents");
 
@@ -112,9 +111,28 @@ mod tests {
         let file  = File::open(&options.filename).unwrap();
 
         match post_data(&options, file) {
-            Ok(_t) => assert!(false, "Method should fail on unsuccessful response"),
+            Ok(_) => assert!(false, "Method should fail on unsuccessful response"),
             Err(err) => assert_eq!("POST was unsuccessful", err)
         };
+    }
+
+    #[test]
+    fn parse_response_returns_key_from_succesfull_post() {
+        let key = "rAnd0mK3y";
+        let _m2 = mock("POST", "/documents").with_body("{\"key\": \"rAnd0mK3y\"}").create();
+        let mut custom_url = String::from(&mockito::server_url());
+        custom_url.push_str("/documents");
+
+        let args: [String; 3] = create_custom_upload_start_arguments(&custom_url);
+        let options = Options::new(&args).unwrap();
+        let file  = File::open(&options.filename).unwrap();
+
+        let mut response: Response = post_data(&options, file).unwrap_or_else(|e| {
+            panic!("Succesfull POST test method failed: {:?}", e)
+        });
+
+        assert_eq!(parse_response(&mut response), key);
+
     }
 
     #[test]
