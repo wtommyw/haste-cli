@@ -12,6 +12,7 @@ pub enum Mode {
 }
 
 impl Options {
+
     pub fn new(args: &[String]) -> Result<Options, &'static str> {
         if args.len() < 2 {
             return Err("Missing arguments");
@@ -20,7 +21,7 @@ impl Options {
         let (filename, url, mode);
         if Options::is_url(&args[1]) {
             mode = Mode::Download;
-            url = args[1].clone();
+            url = Options::convert_to_raw_url(&args[1]);
 
             if args.len() < 3 {
                 return Err("Missing filename");
@@ -41,8 +42,8 @@ impl Options {
         Ok(Options{ filename, url, mode })
     }
 
-    pub fn is_url(str: &String) -> bool {
-        let regex = Regex::new(r"(https|http)(://)[\w]*(\.)[\w]*(/){0,1}").unwrap_or_else(|e| {
+    fn is_url(str: &String) -> bool {
+        let regex = Regex::new(r"(https|http)(://)[\w]*(\.)[\w]*").unwrap_or_else(|e| {
             panic!("Could not compile regex: {}", e)
         });
 
@@ -51,6 +52,29 @@ impl Options {
             None => return false
         };
     }
+
+    fn convert_to_raw_url(url: &String) -> String {
+        let url_regex = Regex::new(r"(https|http)(://)[\w]*(\.)[\w]*").unwrap_or_else(|e| {
+            panic!("Could not compile regex: {}", e)
+        });
+
+        let key_regex = Regex::new(r"[\w]*$").unwrap_or_else(|e| {
+            panic!("Could not compile regex: {}", e)
+        });
+
+        let base_url: String = match url_regex.find(url) {
+            Some(url) => String::from(url.as_str()),
+            None => panic!("Err finding url")
+        };
+
+        let key: String = match key_regex.find(url) {
+            Some(key) => String::from(key.as_str()),
+            None => panic!("Err finding key")
+        };
+
+        format!("{}/raw/{}", base_url, key)
+
+    }
 }
 
 #[cfg(test)]
@@ -58,6 +82,8 @@ mod tests {
     use super::*;
 
     static DEFAULT_URL: &str = "https://pastie.io/documents";
+    static DEFAULT_URL_HTTP: &str = "https://pastie.io/documents";
+
 
     fn create_upload_start_arguments() -> [String; 2] {
         [String::from("command"), String::from("./test-data/test.txt")]
@@ -70,20 +96,20 @@ mod tests {
     }
 
     fn create_download_start_arguments() -> [String; 3] {
-        [String::from("command"), String::from("https://pastie.io/documents"), String::from("./test-data/test.txt")]
+        [String::from("command"), String::from(DEFAULT_URL), String::from("./test-data/test.txt")]
 
     }
 
     #[test]
     fn is_url_returns_true_on_https_url() {
-        let url = String::from("https://pastie.io/documents");
+        let url = String::from(DEFAULT_URL);
 
         assert_eq!(Options::is_url(&url), true);
     }
 
     #[test]
     fn is_url_returns_true_on_http_url() {
-        let url = String::from("http://pastie.io/documents");
+        let url = String::from(DEFAULT_URL_HTTP);
 
         assert_eq!(Options::is_url(&url), true);
     }
@@ -93,6 +119,22 @@ mod tests {
         let filename = String::from("./test-data/test.txt");
 
         assert_eq!(Options::is_url(&filename), false);
+    }
+
+    #[test]
+    fn convert_to_raw_url_inserts_raw_after_url() {
+        let url = String::from("https://pastie.io/rAnd0m");
+        let raw_url = String::from("https://pastie.io/raw/rAnd0m");
+
+        assert_eq!(Options::convert_to_raw_url(&url), raw_url);
+    }
+
+    #[test]
+    fn convert_to_raw_url_inserts_raw_after_url_even_if_already_raw() {
+        let url = String::from("https://pastie.io/raw/rAnd0m");
+        let raw_url = String::from("https://pastie.io/raw/rAnd0m");
+
+        assert_eq!(Options::convert_to_raw_url(&url), raw_url);
     }
 
     #[test]
@@ -153,6 +195,7 @@ mod tests {
             Err(_) => assert!(false, "All arguments were given, method should not fail.")
         }
     }
+
 
     #[test]
     fn options_constructor_set_download_mode_when_given_url() {
