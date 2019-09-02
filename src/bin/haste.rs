@@ -1,3 +1,5 @@
+extern crate haste;
+
 use std::env;
 use std::process;
 
