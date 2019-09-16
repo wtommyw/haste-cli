@@ -13,7 +13,14 @@ podTemplate(label: 'jenkins-pipeline', containers: [
       sh 'whoami'
 
       container('rust') {
-        sh 'whoami'
+        sh 'pwd'
+        sh 'ls -lA'
+      }
+    }
+
+    stage('get cargo verson') {
+      container('rust') {
+        sh 'cargo --version'
       }
     }
 
