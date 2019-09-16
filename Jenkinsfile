@@ -10,9 +10,7 @@ podTemplate(label: 'jenkins-pipeline', containers: [
     checkout scm
 
     stage('test') {
-      container('rust') {
-        sh "cargo test"
-      }
+      sh 'whoami'
     }
 
   }
