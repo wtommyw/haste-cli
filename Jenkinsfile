@@ -24,5 +24,11 @@ podTemplate(label: 'jenkins-pipeline', containers: [
       }
     }
 
+    stage('cargo test') {
+      container('rust') {
+        sh 'cargo test'
+      }
+    }
+
   }
 }
