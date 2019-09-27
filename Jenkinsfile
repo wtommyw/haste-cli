@@ -8,12 +8,6 @@ podTemplate(label: 'jenkins-pipeline', containers: [
   node ('jenkins-pipeline') {
 
     checkout scm
-      
-    stage('test sll') {
-      container('rust') {
-        sh 'openssl s_client -debug -showcerts -connect github.com:443'
-      }
-    }
 
     stage('cargo test') {
       container('rust') {
