@@ -8,5 +8,5 @@ edition = "2018"
 
 [dependencies]
 reqwest = "0.9.20"
-mockito = "0.20.0"
+mockito = "0.28.0"
 regex = "1.6.0"
