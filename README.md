@@ -1,5 +1,6 @@
 # haste-cli
 [![Tests](https://github.com/wtommyw/haste-cli/actions/workflows/rust.yml/badge.svg)](https://github.com/wtommyw/haste-cli/actions/workflows/rust.yml)
+[![Coverage](https://codecov.io/gh/wtommyw/haste-cli/branch/master/graph/badge.svg?token=0F9O1MO7H6)](https://codecov.io/gh/wtommyw/haste-cli)
 
 A small command line application to post the content of a file to a hastebin server. (Default: https://pastie.io/). Built because I needed it and I wanted to improve in Rust and TDD.
 

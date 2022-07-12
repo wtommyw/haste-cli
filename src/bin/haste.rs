@@ -5,6 +5,7 @@ use std::process;
 
 use haste::Options;
 
+#[cfg(not(tarpaulin_include))]
 fn main() {
     let args: Vec<String> = env::args().collect();
     let options: Options = Options::new(&args).unwrap_or_else(|_err| {
