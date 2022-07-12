@@ -21,12 +21,20 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
     - name: Run tests
       run: cargo test
-    - name: Run codecov
-      run: |
-        echo "Install codecov"
-        curl -Os https://uploader.codecov.io/latest/linux/codecov 
-        chmod +x codecov
-        echo "Run codecov"
-        ./codecov
-    - name: Build
-      run: cargo build
+    
+    - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.15.0'
+          args: '-- --test-threads 1'
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: code-coverage-report
+          path: cobertura.xml
