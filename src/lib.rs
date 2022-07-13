@@ -2,21 +2,21 @@ pub mod haste;
 
 extern crate reqwest;
 extern crate regex;
+extern crate serde;
 
 use std::fs::File;
 use std::error::Error;
 use std::collections::HashMap;
-use reqwest::{Response, Client, Body};
+use reqwest::blocking::{Response, Client};
 pub use crate::haste::options::{Options, Mode};
 
 pub fn post_data(options: &Options, file: File) -> Result<Response, &'static str> {
     let client = Client::new();
-    let body = Body::new(file);
 
-    let res = match client.post(&options.url).body(body).send() {
+    let res = match client.post(&options.url).body(file).send() {
         Ok(response) => response,
         Err(err) => {
-            if err.is_http() {
+            if err.is_status() {
                 return Err("Could not POST");
             } else {
                 return Err("Invalid URL");
@@ -31,10 +31,18 @@ pub fn post_data(options: &Options, file: File) -> Result<Response, &'static str
     }
 }
 
-pub fn parse_response(response: &mut Response) -> String {
-    let body: HashMap<String, String> = response.json().unwrap();
+pub fn parse_response(response: Response) -> Result<String, Box<dyn Error>> {
+    let response_body = response.json::<HashMap<String, String>>();
 
-    body.get("key").unwrap().clone()
+    if response_body.is_ok() {
+        let body = response_body.unwrap();
+        Ok(body.get("key").unwrap().clone())
+    } else {
+        Err(Box::new(response_body.unwrap_err()))
+    }
+    // let body: HashMap<String, String> = response.json();
+
+    
 }
 
 pub fn create_share_link(base_url: &String, key: &String) -> String {
@@ -44,20 +52,23 @@ pub fn create_share_link(base_url: &String, key: &String) -> String {
 
 }
 
-pub fn upload(options: &Options) -> Result<(), Box<dyn Error>>{
+pub fn upload(options: &Options) -> Result<(), Box<dyn Error>> {
     let file  = File::open(&options.filename)?;
 
-    let mut response = post_data(&options, file).unwrap_or_else(|err| {
+    let response = post_data(&options, file).unwrap_or_else(|err| {
         panic!("Could not POST: {:?}", err)
     });
 
-    let key = parse_response(&mut response);
+    let parsed_respone = parse_response(response);
+    if parsed_respone.is_ok() {
+        let url = create_share_link(&options.url, &parsed_respone.unwrap());
 
-    let url = create_share_link(&options.url, &key);
+        println!("Uploaded {} to:\n{}", &options.filename, &url);
 
-    println!("Uploaded {} to:\n{}", &options.filename, &url);
-
-    Ok(())
+        Ok(())
+    } else {
+        Err(parsed_respone.unwrap_err())
+    }
 }
 
 pub fn download(_options: &Options) -> Result<(), &'static str> {
@@ -117,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_response_returns_key_from_succesfull_post() {
+    fn parse_response_returns_key_from_succesful_post() {
         let key = "rAnd0mK3y";
         let _m2 = mock("POST", "/documents").with_body("{\"key\": \"rAnd0mK3y\"}").create();
         let mut custom_url = String::from(&mockito::server_url());
@@ -127,12 +138,34 @@ mod tests {
         let options = Options::new(&args).unwrap();
         let file  = File::open(&options.filename).unwrap();
 
-        let mut response: Response = post_data(&options, file).unwrap_or_else(|e| {
+        let response: Response = post_data(&options, file).unwrap_or_else(|e| {
             panic!("Succesfull POST test method failed: {:?}", e)
         });
 
-        assert_eq!(parse_response(&mut response), key);
+        let parsed_response = parse_response(response);
 
+        assert!(parsed_response.is_ok(), "parse_response should return an OK with a valid JSON body");
+        assert_eq!(parsed_response.unwrap(), key);
+    }
+
+    #[test]
+    fn parse_response_returns_error_on_invalid_json_body()  {
+        let key = "rAnd0mK3y";
+
+        let _m3 = mock("POST", "/documents").with_body("\"key\" \"rAnd0mK3y\"").create();
+        let mut custom_url = String::from(&mockito::server_url());
+        custom_url.push_str("/documents");
+
+        let args: [String; 3] = create_custom_upload_start_arguments(&custom_url);
+        let options = Options::new(&args).unwrap();
+        let file  = File::open(&options.filename).unwrap();
+
+        let response: Response = post_data(&options, file).unwrap_or_else(|e| {
+            panic!("Succesfull POST test method failed: {:?}", e)
+        });
+
+        let parsed_response = parse_response(response);
+        assert!(parsed_response.is_err(), "parse_response should return an error with a invalid JSON body")
     }
 
     #[test]
