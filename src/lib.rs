@@ -15,12 +15,8 @@ pub fn post_data(options: &Options, file: File) -> Result<Response, &'static str
 
     let res = match client.post(&options.url).body(file).send() {
         Ok(response) => response,
-        Err(err) => {
-            if err.is_status() {
-                return Err("Could not POST");
-            } else {
-                return Err("Invalid URL");
-            }
+        Err(_err) => {
+            return Err("Invalid URL");
         }
     };
 
@@ -71,10 +67,12 @@ pub fn upload(options: &Options) -> Result<(), Box<dyn Error>> {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn download(_options: &Options) -> Result<(), &'static str> {
     Err("To be implemented")
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
     match options.mode {
         Mode::Upload => upload(&options)?,
@@ -104,11 +102,9 @@ mod tests {
         let options = Options::new(&args).unwrap();
         let file  = File::open(&options.filename).unwrap();
 
-        match post_data(&options, file) {
-            Ok(_) => assert!(false, "This method is designed to fail"),
-            Err(err) => assert_eq!("Invalid URL", err)
-
-        }
+        let response = post_data(&options, file);
+        assert!(response.is_err(), "Response should return an aerror");
+        assert_eq!(response.unwrap_err(), "Invalid URL");
     }
 
     #[test]
@@ -121,10 +117,9 @@ mod tests {
         let options = Options::new(&args).unwrap();
         let file  = File::open(&options.filename).unwrap();
 
-        match post_data(&options, file) {
-            Ok(_) => assert!(false, "Method should fail on unsuccessful response"),
-            Err(err) => assert_eq!("POST was unsuccessful", err)
-        };
+        let response = post_data(&options, file);
+        assert!(response.is_err(), "Response should return an aerror");
+        assert_eq!(response.unwrap_err(), "POST was unsuccessful");
     }
 
     #[test]
@@ -158,11 +153,9 @@ mod tests {
         let options = Options::new(&args).unwrap();
         let file  = File::open(&options.filename).unwrap();
 
-        let response: Response = post_data(&options, file).unwrap_or_else(|e| {
-            panic!("Succesfull POST test method failed: {:?}", e)
-        });
+        let response = post_data(&options, file);
 
-        let parsed_response = parse_response(response);
+        let parsed_response = parse_response(response.unwrap());
         assert!(parsed_response.is_err(), "parse_response should return an error with a invalid JSON body")
     }
 

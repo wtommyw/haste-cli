@@ -226,7 +226,7 @@ mod tests {
 
     #[test]
     fn options_constructor_returns_error_on_missing_filename_when_downlaoding() {
-        let args: [String; 2] = [String::from("aaa"), String::from(DEFAULT_URL)];
+        let args: [String; 2] = [String::from("command"), String::from(DEFAULT_URL)];
         match Options::new(&args) {
             Ok(_options) => {
                 assert!(false)
