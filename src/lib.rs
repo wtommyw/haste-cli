@@ -150,8 +150,6 @@ mod tests {
 
     #[test]
     fn parse_response_returns_error_on_invalid_json_body()  {
-        let key = "rAnd0mK3y";
-
         let _m3 = mock("POST", "/documents").with_body("\"key\" \"rAnd0mK3y\"").create();
         let mut custom_url = String::from(&mockito::server_url());
         custom_url.push_str("/documents");

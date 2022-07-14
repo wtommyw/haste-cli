@@ -21,7 +21,13 @@ impl Options {
         let (filename, url, mode);
         if Options::is_url(&args[1]) {
             mode = Mode::Download;
-            url = Options::convert_to_raw_url(&args[1]);
+            let parsed_url = Options::convert_to_raw_url(&args[1]);
+
+            if parsed_url.is_err() {
+                return Err("fix url");
+            }
+
+            url = parsed_url.unwrap();
 
             if args.len() < 3 {
                 return Err("Missing filename");
@@ -53,27 +59,29 @@ impl Options {
         };
     }
 
-    fn convert_to_raw_url(url: &String) -> String {
+    fn convert_to_raw_url(url: &String) -> Result<String, &'static str> {
         let url_regex = Regex::new(r"(https|http)(://)[\w]*(\.)[\w]*").unwrap_or_else(|e| {
             panic!("Could not compile regex: {}", e)
         });
 
-        let key_regex = Regex::new(r"[\w]*$").unwrap_or_else(|e| {
+        let key_regex = Regex::new(r"[\w]+$").unwrap_or_else(|e| {
             panic!("Could not compile regex: {}", e)
         });
 
-        let base_url: String = match url_regex.find(url) {
-            Some(url) => String::from(url.as_str()),
-            None => panic!("Err finding url")
-        };
+        let base_url_result = url_regex.find(url);
+        if base_url_result == None {
+            return Err("test");
+        }
+        
+        let base_url = String::from(base_url_result.unwrap().as_str());
 
-        let key: String = match key_regex.find(url) {
-            Some(key) => String::from(key.as_str()),
-            None => panic!("Err finding key")
-        };
+        let key_result = key_regex.find(url);
+        if key_result == None {
+            return Err("test 2");
+        }
+        let key = String::from(key_result.unwrap().as_str());
 
-        format!("{}/raw/{}", base_url, key)
-
+        Ok(format!("{}/raw/{}", base_url, key))
     }
 }
 
@@ -125,8 +133,11 @@ mod tests {
     fn convert_to_raw_url_inserts_raw_after_url() {
         let url = String::from("https://pastie.io/rAnd0m");
         let raw_url = String::from("https://pastie.io/raw/rAnd0m");
+        
+        let converted_url = Options::convert_to_raw_url(&url);
 
-        assert_eq!(Options::convert_to_raw_url(&url), raw_url);
+        assert!(converted_url.is_ok(), "URL conversion should have succeeded");
+        assert_eq!(converted_url.unwrap(), raw_url);
     }
 
     #[test]
@@ -134,7 +145,10 @@ mod tests {
         let url = String::from("https://pastie.io/raw/rAnd0m");
         let raw_url = String::from("https://pastie.io/raw/rAnd0m");
 
-        assert_eq!(Options::convert_to_raw_url(&url), raw_url);
+        let converted_url = Options::convert_to_raw_url(&url);
+
+        assert!(converted_url.is_ok(), "URL conversion should have succeeded");
+        assert_eq!(converted_url.unwrap(), raw_url);
     }
 
     #[test]
@@ -208,5 +222,32 @@ mod tests {
             },
             Err(_) =>  assert!(false, "All arguments were given, method should not fail.")
         }
+    }
+
+    #[test]
+    fn options_constructor_returns_error_on_missing_filename_when_downlaoding() {
+        let args: [String; 2] = [String::from("aaa"), String::from(DEFAULT_URL)];
+        match Options::new(&args) {
+            Ok(_options) => {
+                assert!(false)
+            }
+            Err(_) =>  assert!(true, "The only argument was an URL, method should fail")
+        }
+    }
+
+    #[test]
+    fn convert_to_raw_url_fails_on_invalid_url() {
+        let url = String::from("this is 100% not a URL");
+
+        let raw_url = Options::convert_to_raw_url(&url);
+        assert!(raw_url.is_err(), "An invalid URL was given so an Error was excpected");
+    }
+
+    #[test]
+    fn convert_to_raw_url_fails_on_valid_url_wihout_key() {
+        let url = String::from("https://google.com/");
+
+        let raw_url = Options::convert_to_raw_url(&url);
+        assert!(raw_url.is_err(), "An URL without a key was given so an Error was excpected");
     }
 }
