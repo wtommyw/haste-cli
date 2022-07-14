@@ -24,7 +24,7 @@ impl Options {
             let parsed_url = Options::convert_to_raw_url(&args[1]);
 
             if parsed_url.is_err() {
-                return Err("fix url");
+                return Err("Invalid URL provided");
             }
 
             url = parsed_url.unwrap();
@@ -70,14 +70,14 @@ impl Options {
 
         let base_url_result = url_regex.find(url);
         if base_url_result == None {
-            return Err("test");
+            return Err("Invalid URL provided");
         }
         
         let base_url = String::from(base_url_result.unwrap().as_str());
 
         let key_result = key_regex.find(url);
         if key_result == None {
-            return Err("test 2");
+            return Err("Invalid URL provided");
         }
         let key = String::from(key_result.unwrap().as_str());
 
