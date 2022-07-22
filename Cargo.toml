@@ -9,5 +9,7 @@ edition = "2018"
 [dependencies]
 reqwest = { version = "0.11.11", features = ["blocking", "json"] }
 serde = "1.0.139"
-mockito = "0.31.0"
 regex = "1.6.0"
+
+[dev-dependencies]
+mockito = "0.31.0"
