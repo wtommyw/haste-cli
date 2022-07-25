@@ -3,9 +3,8 @@ name: Rust
 on:
   push:
     branches: [ "master" ]
-  on:
-      pull_request_target:
-        types: [labeled]
+  pull_request_target:
+    types: [labeled]
 
 env:
   CARGO_TERM_COLOR: always
