@@ -10,9 +10,21 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  test:
+    name: Only run cargo test
+
+    # Only run for dependabot PR's
+    if: ${{ github.event.label.name == 'dependencies' }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run cargo test
+      run: cargo test
+
+  test_and_get_coverage:
     name: Run tests and get coverage
 
+    # Do not run for dependabot PR's
+    if: ${{ github.event.label.name != 'dependencies' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +32,7 @@ jobs:
       with:
         token: ${{ secrets.GH_TOKEN }}
     
-    - name: Run cargo-tarpaulin
+    - name: Run cargo tarpaulin
       uses: actions-rs/tarpaulin@v0.1
       with:
         version: '0.15.0'
