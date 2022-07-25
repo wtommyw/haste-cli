@@ -1,27 +1,15 @@
-name: Rust
+name: Test and code coverage
 
 on:
   push:
     branches: [ "master" ]
-  pull_request_target:
-    types: [labeled]
+  pull_request:
+    branches: [ "master" ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Run tests
-
-    # Only run for dependabot PR's
-    if: ${{ github.event.label.name == 'dependencies' }}
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Run cargo test
-      run: cargo test
-
   test_and_get_coverage:
     name: Run tests and get coverage
 
