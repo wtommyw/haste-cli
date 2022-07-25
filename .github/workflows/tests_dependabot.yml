@@ -1,8 +1,8 @@
 name: Run tests
 
 on:
-  pull_request_target:
-    types: [labeled]
+  pull_request:
+    branches: [ "master" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,8 +11,6 @@ jobs:
   test:
     name: Run tests
 
-    # Only run for dependabot PR's
-    if: ${{ github.event.label.name == 'dependencies' }}
     runs-on: ubuntu-latest
 
     steps:

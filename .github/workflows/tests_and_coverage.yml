@@ -3,8 +3,6 @@ name: Test and code coverage
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -13,8 +11,6 @@ jobs:
   test_and_get_coverage:
     name: Run tests and get coverage
 
-    # Do not run for dependabot PR's
-    if: ${{ github.event.label.name != 'dependencies' }}
     runs-on: ubuntu-latest
 
     steps:
