@@ -3,15 +3,16 @@ name: Rust
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  on:
+      pull_request_target:
+        types: [labeled]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   test:
-    name: Only run cargo test
+    name: Run tests
 
     # Only run for dependabot PR's
     if: ${{ github.event.label.name == 'dependencies' }}
