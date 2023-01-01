@@ -1,5 +1,5 @@
 # haste-cli
-[![Tests](https://img.shields.io/github/workflow/status/wtommyw/haste-cli/Rust?label=tests)](https://github.com/wtommyw/haste-cli/actions/workflows/rust.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/wtommyw/haste-cli/tests_and_coverage.yml?branch=master)](https://github.com/wtommyw/haste-cli/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/wtommyw/haste-cli?token=0F9O1MO7H6&logo=codecov)](https://codecov.io/gh/wtommyw/haste-cli)
 
 
