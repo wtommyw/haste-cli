@@ -18,16 +18,23 @@ jobs:
       with:
         token: ${{ secrets.GH_TOKEN }}
     
+    - name: Install grcov
+      run: cargo install grcov
+
+    - name: Install llvm-tools-preview
+      run: rustup component add llvm-tools-preview
+
     - name: Test
-      run: cargo test
+      run: RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' 
 
-#    - name: Upload to codecov.io
-#      uses: codecov/codecov-action@v3.1.0
-#      with:
-#        token: ${{secrets.CODECOV_TOKEN}}
+    - name: Create coverage folder
+      run: mkdir -p target/coverage
 
-#    - name: Archive code coverage results
-#      uses: actions/upload-artifact@v3.1.0
-#      with:
-#        name: code-coverage-report
-#        path: cobertura.xml
+    - name: Get coverage
+      run: grcov . --binary-path ./target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/tests.lcov
+    
+   - name: Upload to codecov.io
+     uses: codecov/codecov-action@v3.1.0
+     with:
+       directory: target/coverage
+       token: ${{secrets.CODECOV_TOKEN}}
