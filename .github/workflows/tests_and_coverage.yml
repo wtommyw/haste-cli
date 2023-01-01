@@ -33,8 +33,8 @@ jobs:
     - name: Get coverage
       run: grcov . --binary-path ./target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/tests.lcov
     
-   - name: Upload to codecov.io
-     uses: codecov/codecov-action@v3.1.0
-     with:
-       directory: target/coverage
-       token: ${{secrets.CODECOV_TOKEN}}
+    - name: Upload to codecov.io
+      uses: codecov/codecov-action@v3.1.0
+      with:
+        directory: target/coverage
+        token: ${{secrets.CODECOV_TOKEN}}
